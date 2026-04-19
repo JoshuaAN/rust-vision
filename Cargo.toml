@@ -3,4 +3,21 @@ name = "rust-vision"
 version = "0.1.0"
 edition = "2024"
 
+[workspace]
+resolver = "2"
+members = [
+    "crates/shared",       # Shared data structures
+    "crates/camera",     # Hardware interfacing
+    "crates/vision",     # Computer vision & math
+    "crates/streamer",   # Video encoding & web server
+]
+
 [dependencies]
+nokhwa = { version = "0.10", features = ["input-native"] }
+tokio = { version = "1.35", features = ["full"] }
+axum = { version = "0.7", features = ["ws"] } # <-- WebSocket support
+x264 = "0.5.0" # <-- Software H.264 encoder (Requires C bindings)
+shared = { path = "crates/shared" }
+camera = { path = "crates/camera" }
+streamer = { path = "crates/streamer" }
+vision = { path = "crates/vision" }
