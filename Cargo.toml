@@ -23,3 +23,7 @@ streamer = { path = "crates/streamer" }
 vision = { path = "crates/vision" }
 minifb = "0.27"
 apriltag = { path = "/Users/joshuanichols/Documents/repositories/rstg" }
+image = "0.24" # For pixel manipulation
+imageproc = "0.23" # For drawing lines and text
+rust-embed = "8.3"
+mime_guess = "2.0"

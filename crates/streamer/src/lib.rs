@@ -12,6 +12,8 @@ use tokio::{net::TcpListener, runtime::Handle};
 use tokio::sync::watch;
 use x264::{Colorspace, Image, Plane, Preset, Setup, Tune};
 
+pub mod web_server;
+
 const INDEX_HTML: &str = r#"
 <!DOCTYPE html>
 <html>
