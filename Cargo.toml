@@ -7,7 +7,7 @@ edition = "2024"
 resolver = "2"
 members = [
     "crates/vision_core",
-    "crates/camera",
+    "crates/video_capture",
     "crates/vision_apriltag",
     "crates/vision_object",
     "crates/video_encode",
@@ -17,7 +17,7 @@ members = [
 [dependencies]
 apriltag = { path = "/Users/joshuanichols/Documents/repositories/rstg" }
 vision_core = { path = "crates/vision_core" }
-camera = { path = "crates/camera" }
+video_capture = { path = "crates/video_capture" }
 video_encode = { path = "crates/video_encode" }
 video_stream = { path = "crates/video_stream" }
 vision_apriltag = { path = "crates/vision_apriltag" }

@@ -1,7 +1,7 @@
 use std::thread;
 use std::time::Instant; 
 
-use camera::{Camera, CameraNokhwa}; 
+use video_capture::{Camera, CameraNokhwa}; 
 use vision_apriltag::AprilTagDetector;
 use vision_object::{ObjectDetectorOnnx};
 

@@ -450,15 +450,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1e748733b7cbc798e1434b6ac524f0c1ff2ab456fe201501e6497c8417a4fc33"
 
 [[package]]
-name = "camera"
-version = "0.1.0"
-dependencies = [
- "nokhwa",
- "tokio",
- "vision_core",
-]
-
-[[package]]
 name = "cbc"
 version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2761,7 +2752,6 @@ version = "0.1.0"
 dependencies = [
  "apriltag",
  "axum",
- "camera",
  "image 0.24.9",
  "imageproc",
  "mime_guess",
@@ -2772,6 +2762,7 @@ dependencies = [
  "rusttype",
  "tokio",
  "tower-http",
+ "video_capture",
  "video_encode",
  "video_stream",
  "vision_apriltag",
@@ -3768,6 +3759,15 @@ name = "version_check"
 version = "0.9.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0b928f33d975fc6ad9f86c8f283853ad26bdd5b10b7f1542aa2fa15e2289105a"
+
+[[package]]
+name = "video_capture"
+version = "0.1.0"
+dependencies = [
+ "nokhwa",
+ "tokio",
+ "vision_core",
+]
 
 [[package]]
 name = "video_encode"
