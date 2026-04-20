@@ -1,9 +1,9 @@
 use std::thread;
 
 // Use the new, decoupled structs
-use camera::Camera; 
+use camera::{Camera, CameraNokhwa}; 
 use vision_apriltag::AprilTagDetector;
-use vision_object::ObjectNode;
+use vision_object::{ObjectDetector, ObjectDetectorOnnx};
 
 use image::{DynamicImage, Rgb};
 use imageproc::{
@@ -30,7 +30,7 @@ async fn main() {
 
     // 3. Spawn Hardware Capture Thread
     thread::spawn(move || {
-        let mut cam = Camera::new(0, width, height).expect("Failed to init camera hardware");
+        let mut cam = CameraNokhwa::new(0, width, height).expect("Failed to init camera hardware");
         println!("Camera started successfully at {}x{}", width, height);
 
         loop {
@@ -48,7 +48,7 @@ async fn main() {
 
     // 4. Initialize Vision Detectors
     let mut apriltag_detector = AprilTagDetector::new();
-    let mut ai_detector = ObjectNode::new("yolo11n.onnx");
+    let mut ai_detector = ObjectDetectorOnnx::new("yolo11n.onnx").expect("Failed to init object detector");
 
     // 5. Create a channel for Annotated Frames
     let (annotated_tx, mut annotated_rx) = watch::channel(None);
@@ -74,7 +74,7 @@ async fn main() {
                     ).unwrap();
                     let dyn_img = DynamicImage::ImageRgb8(img_buffer);
                     
-                    let detections = ai_detector.detect(&dyn_img);
+                    let detections = ai_detector.detect(&frame);
                     for obj in &detections {
                         draw_ai_detection(frame.width, frame.height, &mut data, obj, &font);
                     }
