@@ -24,15 +24,17 @@ pub struct ObjectDetectorOnnx {
     session: Session,
 }
 
-impl ObjectDetector for ObjectDetectorOnnx {
-    fn new(model_path: &str) -> Result<Self, Box<dyn Error>> {
+impl ObjectDetectorOnnx {
+    pub fn new(model_path: &str) -> Result<Self, Box<dyn Error>> {
         let session = Session::builder()?
             .with_intra_threads(4)?
             .commit_from_file(model_path)?;
 
         Ok(Self { session })
     }
+}
 
+impl ObjectDetector for ObjectDetectorOnnx {
     fn detect(&mut self, frame: &SharedFrame) -> Vec<ObjectDetection> {
         // 1. Reconstruct a DynamicImage from the SharedFrame's raw RGB bytes
         let rgb_image = RgbImage::from_raw(frame.width, frame.height, frame.data.to_vec())
