@@ -7,6 +7,5 @@ edition = "2024"
 shared = { path = "../shared" }
 axum = { version = "0.7", features = ["ws"] }
 tokio = { version = "1.37", features = ["full"] }
-x264 = "0.5.0"
 mime_guess = "2.0"
 rust-embed = "8.3"

@@ -19,9 +19,9 @@ pub struct CameraNokhwa {
     hw: NokhwaCamera,
 }
 
-impl Camera for CameraNokhwa {
+impl CameraNokhwa {
     /// Creates a new access point for a camera located at the provided index.
-    fn new(index: u32, width: u32, height: u32) -> Result<Self, Box<dyn Error>> {
+    pub fn new(index: u32, width: u32, height: u32) -> Result<Self, Box<dyn Error>> {
         let camera_index = CameraIndex::Index(index);
 
         let resolution = Resolution::new(width, height);
@@ -35,7 +35,9 @@ impl Camera for CameraNokhwa {
 
         Ok(Self { hw })
     }
+}
 
+impl Camera for CameraNokhwa {
     /// Captures and returns a frame from the camera.
     fn grab_frame(&mut self) -> Result<SharedFrame, Box<dyn Error>> {
         let frame_buffer = self.hw.frame()?;

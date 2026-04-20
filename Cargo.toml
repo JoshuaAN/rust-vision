@@ -6,29 +6,31 @@ edition = "2024"
 [workspace]
 resolver = "2"
 members = [
-    "crates/shared",       # Shared data structures
-    "crates/camera",     # Hardware interfacing
-    "crates/vision_apriltag",     # Computer vision & math
-    "crates/vision_object",     # Computer vision & math
-    "crates/streamer",   # Video encoding & web server
+    "crates/shared",
+    "crates/camera",
+    "crates/vision_apriltag",
+    "crates/vision_object",
+    "crates/video_encode",
+    "crates/streamer",
 ]
 
 [dependencies]
-nokhwa = { version = "0.10", features = ["input-native"] }
-tokio = { version = "1.35", features = ["full"] }
-axum = { version = "0.7", features = ["ws"] } # <-- WebSocket support
-x264 = "0.5.0" # <-- Software H.264 encoder (Requires C bindings)
+apriltag = { path = "/Users/joshuanichols/Documents/repositories/rstg" }
 shared = { path = "crates/shared" }
 camera = { path = "crates/camera" }
+video_encode = { path = "crates/video_encode" }
 streamer = { path = "crates/streamer" }
 vision_apriltag = { path = "crates/vision_apriltag" }
 vision_object = { path = "crates/vision_object" }
+nokhwa = { version = "0.10", features = ["input-native"] }
+tokio = { version = "1.35", features = ["full"] }
+axum = { version = "0.7", features = ["ws"] }
+x264 = "0.5.0"
 minifb = "0.27"
-apriltag = { path = "/Users/joshuanichols/Documents/repositories/rstg" }
-image = "0.24" # For pixel manipulation
-imageproc = "0.23" # For drawing lines and text
+image = "0.24"
+imageproc = "0.23"
 rust-embed = "8.3"
 mime_guess = "2.0"
 ort = { version = "2.0.0-rc.12", features = ["ndarray"] }
 ndarray = "0.17.2"
-rusttype = "0.9" # Use this instead of ab_glyph
+rusttype = "0.9"
