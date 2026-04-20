@@ -3,7 +3,7 @@ use std::error::Error;
 use image::{DynamicImage, GenericImageView, RgbImage, imageops::FilterType};
 use ndarray::{Array4, ArrayViewD, Axis};
 use ort::session::Session;
-use shared::{ObjectDetection, SharedFrame};
+use vision_core::{ObjectDetection, SharedFrame};
 
 use crate::object_detector::ObjectDetector;
 

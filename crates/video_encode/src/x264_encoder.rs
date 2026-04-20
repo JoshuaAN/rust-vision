@@ -1,6 +1,6 @@
 use std::error::Error;
 
-use shared::SharedFrame;
+use vision_core::SharedFrame;
 use x264::{Colorspace, Image, Plane, Preset, Setup, Tune};
 
 use crate::encoder::VideoEncoder;

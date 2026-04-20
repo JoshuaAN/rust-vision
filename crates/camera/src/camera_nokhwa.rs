@@ -11,7 +11,7 @@ use nokhwa::{
         CameraFormat, CameraIndex, FrameFormat, RequestedFormat, RequestedFormatType, Resolution,
     },
 };
-use shared::SharedFrame;
+use vision_core::SharedFrame;
 
 use crate::camera::Camera;
 

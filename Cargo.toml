@@ -6,7 +6,7 @@ edition = "2024"
 [workspace]
 resolver = "2"
 members = [
-    "crates/shared",
+    "crates/vision_core",
     "crates/camera",
     "crates/vision_apriltag",
     "crates/vision_object",
@@ -16,7 +16,7 @@ members = [
 
 [dependencies]
 apriltag = { path = "/Users/joshuanichols/Documents/repositories/rstg" }
-shared = { path = "crates/shared" }
+vision_core = { path = "crates/vision_core" }
 camera = { path = "crates/camera" }
 video_encode = { path = "crates/video_encode" }
 video_stream = { path = "crates/video_stream" }
@@ -26,7 +26,6 @@ nokhwa = { version = "0.10", features = ["input-native"] }
 tokio = { version = "1.35", features = ["full"] }
 axum = { version = "0.7", features = ["ws"] }
 x264 = "0.5.0"
-minifb = "0.27"
 image = "0.24"
 imageproc = "0.23"
 rust-embed = "8.3"

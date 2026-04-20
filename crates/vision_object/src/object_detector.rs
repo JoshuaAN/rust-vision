@@ -1,4 +1,4 @@
-use shared::{ObjectDetection, SharedFrame};
+use vision_core::{ObjectDetection, SharedFrame};
 
 /// Represents an object detector pipeline.
 pub trait ObjectDetector {

@@ -5,7 +5,7 @@ edition = "2024"
 
 [dependencies]
 tokio = { version = "1.35", features = ["full"] }
-shared = { path = "../shared" }
+vision_core = { path = "../vision_core" }
 ort = { version = "2.0.0-rc.12", features = ["ndarray"] }
 image = "0.24" # For pixel manipulation
 ndarray = "0.17.2"

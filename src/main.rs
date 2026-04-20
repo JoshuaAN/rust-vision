@@ -16,9 +16,8 @@ use imageproc::{
     drawing::{draw_filled_rect_mut, draw_hollow_rect_mut, draw_line_segment_mut, draw_text_mut},
     rect::Rect,
 };
-use minifb::{Key, Window, WindowOptions};
 use rusttype::{Font, Scale};
-use shared::{SharedFrame, ObjectDetection};
+use vision_core::{SharedFrame, ObjectDetection};
 use tokio::sync::watch;
 
 #[tokio::main]

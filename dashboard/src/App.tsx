@@ -135,7 +135,7 @@ export default function App() {
       <header className="h-14 bg-white border-b border-gray-300 flex items-center justify-between px-6 shrink-0 shadow-sm z-10">
         <div className="flex items-center gap-3">
           <div className={`w-3 h-3 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500 animate-pulse'}`} />
-          <h1 className="font-bold text-lg tracking-wider text-gray-800">VISION ORCHESTRATOR</h1>
+          <h1 className="font-bold text-lg tracking-wider text-gray-800">lemonlantern</h1>
         </div>
         
         <div className="flex gap-6 text-sm font-mono text-gray-500">

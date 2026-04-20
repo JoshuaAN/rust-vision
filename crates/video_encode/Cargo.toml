@@ -4,5 +4,5 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-shared = { path = "../shared" }
+vision_core = { path = "../vision_core" }
 x264 = "0.5.0"

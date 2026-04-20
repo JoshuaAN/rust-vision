@@ -1,4 +1,4 @@
-use shared::SharedFrame;
+use vision_core::SharedFrame;
 use apriltag::{ApriltagDetection, Detector, DetectorConfig, ImageChannel};
 
 pub struct AprilTagDetector {

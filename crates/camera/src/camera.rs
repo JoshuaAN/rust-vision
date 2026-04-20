@@ -1,6 +1,6 @@
 use std::error::Error;
 
-use shared::SharedFrame;
+use vision_core::SharedFrame;
 
 /// An abstraction around a physical camera in hardware which frames can be captured from.
 pub trait Camera {
