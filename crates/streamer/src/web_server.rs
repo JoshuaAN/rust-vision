@@ -1,4 +1,4 @@
-use rust_embed::{RustEmbed, Embed};
+use rust_embed::{Embed};
 use axum::{
     body::Body,
     extract::Path,

@@ -8,7 +8,8 @@ resolver = "2"
 members = [
     "crates/shared",       # Shared data structures
     "crates/camera",     # Hardware interfacing
-    "crates/vision",     # Computer vision & math
+    "crates/vision_apriltag",     # Computer vision & math
+    "crates/vision_object",     # Computer vision & math
     "crates/streamer",   # Video encoding & web server
 ]
 
@@ -20,10 +21,14 @@ x264 = "0.5.0" # <-- Software H.264 encoder (Requires C bindings)
 shared = { path = "crates/shared" }
 camera = { path = "crates/camera" }
 streamer = { path = "crates/streamer" }
-vision = { path = "crates/vision" }
+vision_apriltag = { path = "crates/vision_apriltag" }
+vision_object = { path = "crates/vision_object" }
 minifb = "0.27"
 apriltag = { path = "/Users/joshuanichols/Documents/repositories/rstg" }
 image = "0.24" # For pixel manipulation
 imageproc = "0.23" # For drawing lines and text
 rust-embed = "8.3"
 mime_guess = "2.0"
+ort = { version = "2.0.0-rc.12", features = ["ndarray"] }
+ndarray = "0.17.2"
+rusttype = "0.9" # Use this instead of ab_glyph
