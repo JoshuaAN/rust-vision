@@ -1,12 +1,12 @@
-use rust_embed::{Embed};
 use axum::{
+    Router,
     body::Body,
     extract::Path,
-    http::{header, StatusCode, Response},
+    http::{Response, StatusCode, header},
     response::IntoResponse,
     routing::get,
-    Router,
 };
+use rust_embed::Embed;
 
 #[derive(Embed)]
 #[folder = "../../dashboard/dist/"]
@@ -20,7 +20,7 @@ pub async fn start_web_server(port: u16) {
     let listener = tokio::net::TcpListener::bind(format!("0.0.0.0:{}", port))
         .await
         .unwrap();
-    
+
     println!("Web Dashboard available at http://localhost:{}", port);
     axum::serve(listener, app).await.unwrap();
 }

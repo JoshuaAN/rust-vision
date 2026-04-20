@@ -1,15 +1,15 @@
 use std::thread;
 
 use axum::{
-    extract::{State, WebSocketUpgrade},
+    Router,
     extract::ws::{Message, WebSocket},
+    extract::{State, WebSocketUpgrade},
     response::Html,
     routing::get,
-    Router,
 };
 use shared::SharedFrame;
-use tokio::{net::TcpListener, runtime::Handle};
 use tokio::sync::watch;
+use tokio::{net::TcpListener, runtime::Handle};
 use x264::{Colorspace, Image, Plane, Preset, Setup, Tune};
 
 pub mod web_server;
@@ -75,25 +75,34 @@ impl StreamerNode {
             let mut pts = 0i64;
 
             loop {
-                // block_on safely halts this specific OS thread until a frame arrives, 
+                // block_on safely halts this specific OS thread until a frame arrives,
                 // without blocking the async web server!
                 if rt.block_on(frame_rx.changed()).is_err() {
                     println!("Camera stream closed, stopping encoder.");
-                    break; 
+                    break;
                 }
 
                 if let Some(frame) = frame_rx.borrow().clone() {
                     let (y, u, v) = rgb_to_i420(width as usize, height as usize, &frame.data);
-                    
-                    let plane_y = Plane { stride: width as i32, data: &y };
-                    let plane_u = Plane { stride: (width / 2) as i32, data: &u };
-                    let plane_v = Plane { stride: (width / 2) as i32, data: &v };
+
+                    let plane_y = Plane {
+                        stride: width as i32,
+                        data: &y,
+                    };
+                    let plane_u = Plane {
+                        stride: (width / 2) as i32,
+                        data: &u,
+                    };
+                    let plane_v = Plane {
+                        stride: (width / 2) as i32,
+                        data: &v,
+                    };
 
                     let x264_image = Image::new(
                         Colorspace::I420,
                         width as i32,
                         height as i32,
-                        &[plane_y, plane_u, plane_v]
+                        &[plane_y, plane_u, plane_v],
                     );
 
                     match encoder.encode(pts, x264_image) {
@@ -119,9 +128,13 @@ impl StreamerNode {
 
         let addr = format!("0.0.0.0:{}", port);
         println!("Starting streaming server on http://{}", addr);
-        
-        let listener = TcpListener::bind(&addr).await.expect("Failed to bind to port");
-        axum::serve(listener, app).await.expect("Failed to start Axum server");
+
+        let listener = TcpListener::bind(&addr)
+            .await
+            .expect("Failed to bind to port");
+        axum::serve(listener, app)
+            .await
+            .expect("Failed to start Axum server");
     }
 }
 
@@ -153,7 +166,10 @@ fn rgb_to_i420(width: usize, height: usize, rgb: &[u8]) -> (Vec<u8>, Vec<u8>, Ve
     (y_plane, u_plane, v_plane)
 }
 
-async fn ws_handler(ws: WebSocketUpgrade, State(rx): State<watch::Receiver<Vec<u8>>>) -> impl axum::response::IntoResponse {
+async fn ws_handler(
+    ws: WebSocketUpgrade,
+    State(rx): State<watch::Receiver<Vec<u8>>>,
+) -> impl axum::response::IntoResponse {
     ws.on_upgrade(|socket| handle_socket(socket, rx))
 }
 
@@ -161,8 +177,10 @@ async fn handle_socket(mut socket: WebSocket, mut rx: watch::Receiver<Vec<u8>>) 
     loop {
         if rx.changed().await.is_ok() {
             let frame = rx.borrow().clone();
-            if frame.is_empty() { continue; }
-            
+            if frame.is_empty() {
+                continue;
+            }
+
             if socket.send(Message::Binary(frame)).await.is_err() {
                 break; // Client disconnected
             }
