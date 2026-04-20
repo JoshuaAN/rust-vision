@@ -220,3 +220,4 @@ fn intersection_over_union(box_a: &[f32; 4], box_b: &[f32; 4]) -> f32 {
 
     intersection / union
 }
+
