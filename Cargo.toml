@@ -12,7 +12,6 @@ members = [
     "crates/vision_object",
     "crates/video_encode",
      "crates/video_stream",
-    "crates/streamer",
 ]
 
 [dependencies]
@@ -21,7 +20,6 @@ shared = { path = "crates/shared" }
 camera = { path = "crates/camera" }
 video_encode = { path = "crates/video_encode" }
 video_stream = { path = "crates/video_stream" }
-streamer = { path = "crates/streamer" }
 vision_apriltag = { path = "crates/vision_apriltag" }
 vision_object = { path = "crates/vision_object" }
 nokhwa = { version = "0.10", features = ["input-native"] }
