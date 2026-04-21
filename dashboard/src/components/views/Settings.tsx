@@ -21,6 +21,25 @@ export const SettingsView = () => {
   const [subnetMask, setSubnetMask] = useState('255.255.255.0');
   const [gateway, setGateway] = useState('10.99.99.1');
 
+  const handleIpChange = (setter: React.Dispatch<React.SetStateAction<string>>) => 
+    (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+      // 1. Strip everything except numbers and periods
+      let val = e.target.value.replace(/[^0-9.]/g, '');
+      
+      // 2. Split into octets
+      const parts = val.split('.');
+      
+      // 3. Prevent more than 4 octets
+      if (parts.length > 4) {
+        parts.length = 4;
+      }
+      
+      // 4. Cap each octet at 255
+      val = parts.map(p => (p.length > 0 && parseInt(p) > 255 ? '255' : p)).join('.');
+      
+      setter(val);
+  };
+
   return (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', p: 2, gap: 2, overflowY: 'auto' }}>
       
@@ -89,7 +108,7 @@ export const SettingsView = () => {
                   <TextField 
                     fullWidth size="small" 
                     value={ipAddress}
-                    onChange={(e) => setIpAddress(e.target.value)}
+                    onChange={handleIpChange(setIpAddress)}
                   />
                 </Box>
                 <Box sx={{ display: 'flex', gap: 2 }}>

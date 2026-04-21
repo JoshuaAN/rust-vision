@@ -6,7 +6,7 @@ import { carbonTheme } from './theme';
 // Import your views (you'll create these files next)
 // For now, I'll define placeholders below so the code runs immediately
 import { DashboardView } from './components/views/Dashboard'; 
-import { CameraView } from './components/views/Camera';
+import { FieldView } from './components/views/Field';
 import { SettingsView } from './components/views/Settings';
 import { CalibrationView } from './components/views/Calibration';
 
@@ -17,10 +17,10 @@ export default function App() {
   // Logic to determine which component to show
   const renderView = () => {
     switch (activeTab) {
-      case 'Live Stream':
+      case 'Dashboard':
         return <DashboardView />;
-      case 'Camera':
-        return <CameraView />;
+      case 'Field View':
+        return <FieldView />;
       case 'Calibration':
         return <CalibrationView />;
       case 'Settings':

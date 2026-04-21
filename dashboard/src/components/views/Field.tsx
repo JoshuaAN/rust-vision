@@ -1,6 +1,6 @@
 import { Box } from "@mui/material";
 
-export const CameraView = () => {
+export const FieldView = () => {
   return (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', p: 2, gap: 2 }}>
 

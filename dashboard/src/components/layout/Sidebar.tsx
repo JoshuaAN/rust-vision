@@ -7,6 +7,8 @@ import CameraAltIcon from '@mui/icons-material/CameraAlt';
 import SettingsIcon from '@mui/icons-material/Settings';
 import HighlightIcon from '@mui/icons-material/Highlight';
 import CenterFocusStrongIcon from '@mui/icons-material/CenterFocusStrong';
+import SpaceDashboardIcon from '@mui/icons-material/SpaceDashboard';
+import MapIcon from '@mui/icons-material/Map';
 
 interface SidebarProps {
   activeTab: string;
@@ -16,8 +18,8 @@ interface SidebarProps {
 
 export const Sidebar = ({ activeTab, setActiveTab, isConnected = true }: SidebarProps) => {
   const menuItems = [
-    { label: 'Live Stream', icon: <VideocamIcon /> },
-    { label: 'Camera', icon: <CameraAltIcon /> },
+    { label: 'Dashboard', icon: <SpaceDashboardIcon /> },
+    { label: 'Field View', icon: <MapIcon /> },
     { label: 'Calibration', icon: <CenterFocusStrongIcon /> },
     { label: 'Settings', icon: <SettingsIcon /> },
   ];
