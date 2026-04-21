@@ -80,17 +80,25 @@ async fn main() {
             if let Some(frame) = frame_rx.borrow().clone() {
                 
                 // --- PARALLEL EXECUTION ---
-                // rayon::join splits this workload across two threads and waits for both to finish
-                let (tags, objects) = rayon::join(
+                // rayon::join splits this workload across two threads and waits for both to finish.
+                // We wrap the object detection in a block to measure its exact duration.
+                let (tags, (objects, obj_latency_ms)) = rayon::join(
                     || tag_detector.detect(&frame),
-                    || obj_detector.detect(&frame)
+                    || {
+                        let start_time = Instant::now();
+                        let det = obj_detector.detect(&frame);
+                        let elapsed_ms = start_time.elapsed().as_secs_f64() * 1000.0;
+                        (det, elapsed_ms as f32) // Assuming latency_ms is f32; remove "as f32" if it is f64
+                    }
                 );
+
+                println!("Object inference time: {obj_latency_ms}ms");
 
                 // Send JSON metadata to WebSocket (optional, just in case you need it for UI data)
                 let _ = meta_tx.send(PipelineResult {
                     frame_timestamp: frame.timestamp_ms,
                     tags: tags.iter().map(|f| { ApriltagDetection { id: f.id, corners: f.corners } }).collect(),
-                    latency_ms: 0.0,
+                    latency_ms: obj_latency_ms as f64, // Passed the timed duration here
                     objects: objects.clone(),
                 });
 
@@ -112,7 +120,8 @@ async fn main() {
                         
                         draw_hollow_rect_mut(&mut img_buf, rect, cyan);
                         
-                        let label = format!("{} {:.0}%", obj.label, obj.confidence * 100.0);
+                        // Added latency to the YOLO label drawing for real-time visual feedback
+                        let label = format!("{} {:.0}% ({:.1}ms)", obj.label, obj.confidence * 100.0, obj_latency_ms);
                         draw_text_mut(&mut img_buf, cyan, x1 as i32, (y1 - 20.0) as i32, font_scale, &font, &label);
                     }
 
@@ -141,7 +150,8 @@ async fn main() {
                 }
 
                 // Send the finished, drawn frame to the H.264 encoder
-                let _ = drawn_tx_clone.send(Some(annotated_frame));            }
+                let _ = drawn_tx_clone.send(Some(annotated_frame));            
+            }
         }
     });
 
