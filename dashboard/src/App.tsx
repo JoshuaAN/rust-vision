@@ -8,6 +8,7 @@ import { carbonTheme } from './theme';
 import { DashboardView } from './components/views/Dashboard'; 
 import { CameraView } from './components/views/Camera';
 import { SettingsView } from './components/views/Settings';
+import { CalibrationView } from './components/views/Calibration';
 
 export default function App() {
   // Use the labels from your Sidebar to control which view is rendered
@@ -20,6 +21,8 @@ export default function App() {
         return <DashboardView />;
       case 'Camera':
         return <CameraView />;
+      case 'Calibration':
+        return <CalibrationView />;
       case 'Settings':
         return <SettingsView />;
       default:
@@ -33,7 +36,7 @@ export default function App() {
       <Box sx={{ display: 'flex', height: '100vh', bgcolor: 'background.default' }}>
         
         {/* Pass state and setter to Sidebar so it can change the view */}
-        <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+        <Sidebar activeTab={activeTab} setActiveTab={setActiveTab}  isConnected={false}/>
         
         <Box 
   component="main" 
@@ -52,23 +55,3 @@ export default function App() {
     </ThemeProvider>
   );
 }
-
-// --- Temporary Placeholders ---
-// You can move these into their own files in src/components/views/
-const CameraViewPlaceholder = () => (
-  <Box>
-    <Box sx={{ color: 'text.primary', typography: 'h5', fontWeight: 800, mb: 2 }}>
-      Camera Calibration
-    </Box>
-    <Box sx={{ color: 'text.secondary' }}>Calibration and intrinsics configuration will go here.</Box>
-  </Box>
-);
-
-const SettingsViewPlaceholder = () => (
-  <Box>
-    <Box sx={{ color: 'text.primary', typography: 'h5', fontWeight: 800, mb: 2 }}>
-      Network Settings
-    </Box>
-    <Box sx={{ color: 'text.secondary' }}>Networking and system administration will go here.</Box>
-  </Box>
-);

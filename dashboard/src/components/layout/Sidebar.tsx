@@ -1,5 +1,4 @@
 // src/components/Sidebar.tsx
-import React, { useState } from 'react';
 import { 
   Box, Typography, List, ListItem, ListItemButton, ListItemIcon, ListItemText
 } from '@mui/material';
@@ -7,16 +6,19 @@ import VideocamIcon from '@mui/icons-material/Videocam';
 import CameraAltIcon from '@mui/icons-material/CameraAlt';
 import SettingsIcon from '@mui/icons-material/Settings';
 import HighlightIcon from '@mui/icons-material/Highlight';
+import CenterFocusStrongIcon from '@mui/icons-material/CenterFocusStrong';
 
 interface SidebarProps {
   activeTab: string;
   setActiveTab: (tab: string) => void;
+  isConnected: boolean;
 }
 
-export const Sidebar = ({ activeTab, setActiveTab }: SidebarProps) => {
+export const Sidebar = ({ activeTab, setActiveTab, isConnected = true }: SidebarProps) => {
   const menuItems = [
     { label: 'Live Stream', icon: <VideocamIcon /> },
     { label: 'Camera', icon: <CameraAltIcon /> },
+    { label: 'Calibration', icon: <CenterFocusStrongIcon /> },
     { label: 'Settings', icon: <SettingsIcon /> },
   ];
 
@@ -78,6 +80,42 @@ export const Sidebar = ({ activeTab, setActiveTab }: SidebarProps) => {
           );
         })}
       </List>
+      {/* CONNECTION STATUS FOOTER */}
+      <Box sx={{ 
+        p: 3, 
+        borderTop: 1, 
+        borderColor: 'divider', 
+        display: 'flex', 
+        alignItems: 'center', 
+        gap: 2,
+        bgcolor: 'rgba(0,0,0,0.1)' // Slight darkening for the footer area
+      }}>
+        {/* Status Dot */}
+        <Box
+          sx={{
+            width: 12,
+            height: 12,
+            borderRadius: '50%',
+            bgcolor: isConnected ? 'success.main' : 'error.main',
+            boxShadow: isConnected ? '0 0 8px rgba(76, 175, 80, 0.5)' : '0 0 8px rgba(244, 67, 54, 0.5)',
+            flexShrink: 0
+          }}
+        />
+        
+        {/* Status Text */}
+        <Box>
+          <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 700, display: 'block', lineHeight: 1 }}>
+            SYSTEM STATUS
+          </Typography>
+          <Typography variant="body2" sx={{ 
+            color: isConnected ? 'text.primary' : 'error.main', 
+            fontWeight: 800, 
+            mt: 0.5 
+          }}>
+            {isConnected ? 'Connected' : 'Disconnected'}
+          </Typography>
+        </Box>
+      </Box>
     </Box>
   );
 };
