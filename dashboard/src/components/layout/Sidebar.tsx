@@ -8,9 +8,12 @@ import CameraAltIcon from '@mui/icons-material/CameraAlt';
 import SettingsIcon from '@mui/icons-material/Settings';
 import HighlightIcon from '@mui/icons-material/Highlight';
 
-export const Sidebar: React.FC = () => {
-  const [activeTab, setActiveTab] = useState('Live Stream');
+interface SidebarProps {
+  activeTab: string;
+  setActiveTab: (tab: string) => void;
+}
 
+export const Sidebar = ({ activeTab, setActiveTab }: SidebarProps) => {
   const menuItems = [
     { label: 'Live Stream', icon: <VideocamIcon /> },
     { label: 'Camera', icon: <CameraAltIcon /> },

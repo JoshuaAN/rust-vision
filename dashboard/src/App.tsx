@@ -6,6 +6,8 @@ import { carbonTheme } from './theme';
 // Import your views (you'll create these files next)
 // For now, I'll define placeholders below so the code runs immediately
 import { DashboardView } from './components/views/Dashboard'; 
+import { CameraView } from './components/views/Camera';
+import { SettingsView } from './components/views/Settings';
 
 export default function App() {
   // Use the labels from your Sidebar to control which view is rendered
@@ -17,9 +19,9 @@ export default function App() {
       case 'Live Stream':
         return <DashboardView />;
       case 'Camera':
-        return <CameraViewPlaceholder />;
+        return <CameraView />;
       case 'Settings':
-        return <SettingsViewPlaceholder />;
+        return <SettingsView />;
       default:
         return <DashboardView />;
     }

@@ -1,148 +1,167 @@
-// src/components/views/Dashboard.tsx
-import { Box, Typography, Paper, Slider, Stack, Divider, Select, MenuItem } from '@mui/material';
-import Grid from '@mui/material/Grid'; // Ensure you are importing standard Grid
+import { useState } from 'react';
+import { 
+  Box, Typography, Paper, Slider, Stack, Divider, 
+  Select, MenuItem, Tabs, Tab, Chip 
+} from '@mui/material';
+import Grid from '@mui/material/Grid';
 import { WebRtcPlayer } from '../stream/WebRtcPlayer';
 
 export const DashboardView = () => {
+  const [pipeline, setPipeline] = useState(0);
+  const [tabValue, setTabValue] = useState('1');
+
+  // Add state for the sliders so we can display their current values
+  const [exposure, setExposure] = useState<number>(20);
+  const [decimation, setDecimation] = useState<number>(2);
+  const [confidence, setConfidence] = useState<number>(0.6);
+
   return (
-    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', p: 2 }}>
+    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', p: 2, gap: 2 }}>
       
-      {/* We use a 12-column grid. 
-        Left Side: size 5 (41.6% width) - mirrors the wide tuning area in Limelight.
-        Right Side: size 7 (58.3% width).
-      */}
       <Grid container spacing={3} sx={{ flexGrow: 1, height: '100%' }}>
         
-        {/* LEFT COLUMN - Wide Tuning Panel */}
-        <Grid 
-          size={{ xs: 12, md: 5 }} 
-          sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}
-        >
-          <Stack spacing={3} sx={{ flexGrow: 1, height: '100%' }}>
-            
-            <Paper sx={{ 
-              p: 4, 
-              bgcolor: 'background.paper', 
-              borderRadius: 2, 
-              flexGrow: 1, 
-              display: 'flex', 
-              flexDirection: 'column' 
-            }}>
-              <Typography variant="overline" sx={{ fontWeight: 800, color: 'primary.main', fontSize: '0.85rem' }}>
-                Input Processing
-              </Typography>
-              <Divider sx={{ my: 2 }} />
+        {/* LEFT COLUMN: Configuration */}
+        <Grid size={{ xs: 12, md: 5 }} sx={{ display: 'flex', flexDirection: 'column', height: '100%', gap: 3 }}>
+          
+          {/* TOP: Input Processing (Universal) */}
+          <Paper sx={{ p: 3, bgcolor: 'background.paper', borderRadius: 2 }}>
+            <Typography variant="overline" sx={{ fontWeight: 800, color: 'primary.main' }}>Camera Settings</Typography>
+            <Divider sx={{ my: 1.5 }} />
+            <Stack spacing={2.5}>
+              <Box>
+                <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.secondary', display: 'block', mb: 0.5 }}>PIPELINE</Typography>
+                <Select 
+                  fullWidth size="small" 
+                  value={pipeline} 
+                  onChange={(e) => setPipeline(Number(e.target.value))}
+                >
+                  <MenuItem value={0}>AprilTags 36h11</MenuItem>
+                  <MenuItem value={1}>Neural Detector</MenuItem>
+                </Select>
+              </Box>
+              <Box>
+                <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.secondary', display: 'block', mb: 0.5 }}>CAPTURE RESOLUTION</Typography>
+                <Select fullWidth size="small" defaultValue="1280x720">
+                  <MenuItem value="640x480">640 x 480 (High FPS)</MenuItem>
+                  <MenuItem value="800x600">800 x 600</MenuItem>
+                  <MenuItem value="1280x720">1280 x 720 (Standard)</MenuItem>
+                </Select>
+              </Box>
               
-              <Stack spacing={4} sx={{ mt: 2 }}>
-                <Box>
-                  <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 700, mb: 1, display: 'block' }}>EXPOSURE</Typography>
-                  <Slider defaultValue={20} size="medium" />
+              {/* EXPOSURE SLIDER WITH VALUE READOUT */}
+              <Box>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+                  <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.secondary' }}>EXPOSURE</Typography>
+                  <Typography variant="caption" sx={{ fontWeight: 800, color: 'primary.main', fontFamily: 'monospace' }}>{exposure}</Typography>
                 </Box>
-                <Box>
-                  <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 700, mb: 1, display: 'block' }}>BRIGHTNESS</Typography>
-                  <Slider defaultValue={50} size="medium" />
-                </Box>
-                <Box>
-                  <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 700, mb: 1, display: 'block' }}>PIPELINE</Typography>
-                  <Select fullWidth size="small" defaultValue={0}>
-                    <MenuItem value={0}>AprilTags 36h11</MenuItem>
-                    <MenuItem value={1}>Neural Detector</MenuItem>
-                  </Select>
-                </Box>
-              </Stack>
-            </Paper>
+                <Slider 
+                  value={exposure} 
+                  onChange={(_, val) => setExposure(val as number)}
+                  size="small" 
+                />
+              </Box>
 
-            <Paper sx={{ p: 3, bgcolor: 'background.paper', borderRadius: 2 }}>
-              <Typography variant="overline" sx={{ fontWeight: 800, color: 'primary.main' }}>Sorting Logic</Typography>
-              <Divider sx={{ my: 1.5 }} />
-              <Select fullWidth size="small" defaultValue="largest">
-                <MenuItem value="largest">Largest Area</MenuItem>
-                <MenuItem value="closest">Closest to Center</MenuItem>
-              </Select>
-            </Paper>
+            </Stack>
+          </Paper>
 
-          </Stack>
+          {/* BOTTOM: Specialized Tuning Tabs */}
+          <Paper sx={{ flexGrow: 1, borderRadius: 2, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            <Box sx={{ borderBottom: 1, borderColor: 'divider', bgcolor: 'rgba(255,255,255,0.02)' }}>
+              <Tabs value={tabValue} onChange={(_, v) => setTabValue(v)} variant="fullWidth">
+                <Tab label="Input" value="1" sx={{ fontSize: '0.7rem', fontWeight: 700 }} />
+                <Tab label="Detector" value="2" sx={{ fontSize: '0.7rem', fontWeight: 700 }} />
+                <Tab label="Output" value="3" sx={{ fontSize: '0.7rem', fontWeight: 700 }} />
+              </Tabs>
+            </Box>
+
+            <Box sx={{ p: 3, flexGrow: 1 }}>
+              {tabValue === '1' && (
+                <Stack spacing={3}>
+                  <Typography variant="overline" sx={{ color: 'primary.main', fontWeight: 800 }}>
+                    {pipeline === 0 ? 'AprilTag Config' : 'Neural Config'}
+                  </Typography>
+                  {pipeline === 0 ? (
+                    <>
+                      {/* DECIMATION SLIDER WITH VALUE READOUT */}
+                      <Box>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+                          <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.secondary' }}>DECIMATION</Typography>
+                          <Typography variant="caption" sx={{ fontWeight: 800, color: 'primary.main', fontFamily: 'monospace' }}>{decimation}</Typography>
+                        </Box>
+                        <Slider 
+                          value={decimation} 
+                          onChange={(_, val) => setDecimation(val as number)}
+                          min={1} max={4} step={1} marks 
+                          size="small"
+                        />
+                      </Box>
+                      <Box>
+                        <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.secondary', display: 'block', mb: 0.5 }}>THREADS</Typography>
+                        <Select fullWidth size="small" defaultValue={4}>
+                          <MenuItem value={1}>1 Thread</MenuItem>
+                          <MenuItem value={4}>4 Threads</MenuItem>
+                        </Select>
+                      </Box>
+                    </>
+                  ) : (
+                    <Box>
+                      {/* CONFIDENCE SLIDER WITH VALUE READOUT */}
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+                        <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.secondary' }}>CONFIDENCE THRESHOLD</Typography>
+                        <Typography variant="caption" sx={{ fontWeight: 800, color: 'primary.main', fontFamily: 'monospace' }}>{confidence.toFixed(2)}</Typography>
+                      </Box>
+                      <Slider 
+                        value={confidence} 
+                        onChange={(_, val) => setConfidence(val as number)}
+                        min={0} max={1} step={0.01} 
+                        size="small"
+                      />
+                    </Box>
+                  )}
+                </Stack>
+              )}
+              {tabValue === '3' && (
+                <Stack spacing={3}>
+                  <Typography variant="overline" sx={{ color: 'primary.main', fontWeight: 800 }}>
+                    Stream Settings
+                  </Typography>
+                  
+                  <Box>
+                    <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.secondary', display: 'block', mb: 0.5 }}>STREAM RESOLUTION</Typography>
+                    <Select fullWidth size="small" defaultValue="640x480">
+                      <MenuItem value="320x240">320 x 240 (Low Bandwidth)</MenuItem>
+                      <MenuItem value="640x480">640 x 480 (Standard)</MenuItem>
+                      <MenuItem value="1280x720">1280 x 720 (High Quality)</MenuItem>
+                    </Select>
+                  </Box>
+                </Stack>
+              )}
+            </Box>
+          </Paper>
         </Grid>
 
-        {/* RIGHT COLUMN - Video & Telemetry */}
-        <Grid 
-          size={{ xs: 12, md: 7 }} 
-          sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}
-        >
-          <Stack spacing={3} sx={{ height: '100%', flexGrow: 1 }}>
+        {/* RIGHT COLUMN: Output */}
+        <Grid size={{ xs: 12, md: 7 }} sx={{ display: 'flex', flexDirection: 'column', height: '100%', gap: 2 }}>
+          
+          {/* Video Viewport */}
+          <Paper sx={{ bgcolor: '#000', borderRadius: 2, overflow: 'hidden', position: 'relative' }}>
+            <WebRtcPlayer />
             
-            {/* Video Card - No flexGrow to let it sit at its natural 16:9 ratio */}
-            <Paper sx={{ 
-              bgcolor: '#000', 
-              borderRadius: 2, 
-              overflow: 'hidden',
-              border: '1px solid',
-              borderColor: 'divider',
-              lineHeight: 0
+            <Box sx={{ 
+              position: 'absolute', top: 12, right: 12, 
+              display: 'flex', gap: 1 
             }}>
-               <WebRtcPlayer />
-            </Paper>
+              <Chip label="50 FPS" size="small" sx={{ bgcolor: 'rgba(0,0,0,0.6)', color: 'success.main', fontWeight: 900, borderRadius: 1 }} />
+              <Chip label="1280x720" size="small" sx={{ bgcolor: 'rgba(0,0,0,0.6)', color: 'text.secondary', borderRadius: 1 }} />
+            </Box>
+          </Paper>
 
-            {/* Telemetry Card - Expands to fill the remaining vertical height */}
-            <Paper sx={{ 
-              p: 2, 
-              bgcolor: 'background.paper', 
-              borderRadius: 2, 
-              flexGrow: 1, 
-              display: 'flex', 
-              flexDirection: 'column' 
-            }}>
-              <Typography variant="overline" sx={{ fontWeight: 800, color: 'primary.main', px: 1 }}>
-                Target Data
-              </Typography>
-              <Divider sx={{ my: 1 }} />
-              
-              <Stack spacing={0.5} sx={{ mt: 1 }}>
-                {/* Header Row (Optional, for clarity) */}
-                <Box sx={{ display: 'flex', px: 2, pb: 1 }}>
-                   <Typography variant="caption" sx={{ flex: 1, fontWeight: 700, color: 'text.disabled' }}>TARGET ID</Typography>
-                   <Typography variant="caption" sx={{ flex: 1, fontWeight: 700, color: 'text.disabled', textAlign: 'center' }}>TX / TY</Typography>
-                   <Typography variant="caption" sx={{ flex: 1, fontWeight: 700, color: 'text.disabled', textAlign: 'center' }}>AREA</Typography>
-                   <Typography variant="caption" sx={{ flex: 1, fontWeight: 700, color: 'text.disabled', textAlign: 'right' }}>LATENCY</Typography>
-                </Box>
-
-                {/* Target Rows - Repeating list style */}
-                {[
-                  { id: '0', tx: '-14.25', ty: '+4.23', ta: '5.52', tl: '12ms', active: true },
-                  { id: '1', tx: '+2.10', ty: '-1.45', ta: '1.20', tl: '14ms', active: false },
-                  { id: '2', tx: '--', ty: '--', ta: '--', tl: '--', active: false },
-                ].map((target) => (
-                  <Box 
-                    key={target.id}
-                    sx={{ 
-                      display: 'flex', 
-                      p: 1.5, 
-                      px: 2,
-                      bgcolor: target.active ? 'rgba(255, 255, 0, 0.05)' : 'transparent',
-                      border: '1px solid',
-                      borderColor: target.active ? 'primary.main' : 'transparent',
-                      borderRadius: 1,
-                      alignItems: 'center'
-                    }}
-                  >
-                    <Typography sx={{ flex: 1, fontWeight: 800, color: target.active ? 'primary.main' : 'text.secondary', fontFamily: 'monospace' }}>
-                      #{target.id}
-                    </Typography>
-                    <Typography sx={{ flex: 1, textAlign: 'center', fontFamily: 'monospace', fontSize: '0.9rem' }}>
-                      {target.tx}° / {target.ty}°
-                    </Typography>
-                    <Typography sx={{ flex: 1, textAlign: 'center', fontFamily: 'monospace', fontSize: '0.9rem' }}>
-                      {target.ta}%
-                    </Typography>
-                    <Typography sx={{ flex: 1, textAlign: 'right', fontFamily: 'monospace', fontSize: '0.9rem', color: 'text.secondary' }}>
-                      {target.tl}
-                    </Typography>
-                  </Box>
-                ))}
-              </Stack>
-            </Paper>
-
-          </Stack>
+          {/* Target List */}
+          <Paper sx={{ p: 2, flexGrow: 1, bgcolor: 'background.paper', borderRadius: 2 }}>
+            <Typography variant="overline" sx={{ fontWeight: 800, color: 'primary.main', px: 1 }}>Target Data</Typography>
+            <Divider sx={{ my: 1 }} />
+            {/* Target Rows Go Here */}
+          </Paper>
         </Grid>
       </Grid>
     </Box>
