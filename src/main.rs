@@ -1,38 +1,45 @@
 use std::thread;
 use std::time::Instant; 
 
+use image::Rgb;
+use imageproc::drawing::{draw_hollow_rect_mut, draw_line_segment_mut, draw_text_mut};
+use imageproc::rect::Rect;
+use rusttype::{Font, Scale};
+use rayon::prelude::*;
+
 use video_capture::{Camera, CameraNokhwa}; 
 use vision_apriltag::AprilTagDetector;
-use vision_object::{ObjectDetectorOnnx};
+use vision_object::{ObjectDetector, ObjectDetectorOnnx};
 
 use video_encode::{VideoEncoder, X264Encoder};
 use video_stream::WebRtcBroadcaster;
 
-use axum::{routing::post, Router, extract::State};
+use axum::{Router, extract::{State, WebSocketUpgrade, ws::{Message, WebSocket}}, routing::{get, post}};
 use tower_http::cors::{Any, CorsLayer};
 
-use image::Rgb;
-use imageproc::{
-    drawing::{draw_filled_rect_mut, draw_hollow_rect_mut, draw_line_segment_mut, draw_text_mut},
-    rect::Rect,
-};
-use rusttype::{Font, Scale};
-use vision_core::{SharedFrame, ObjectDetection};
+use vision_core::{ApriltagDetection, EncodedFrame, PipelineResult, SharedFrame};
 use tokio::sync::watch;
+
+#[derive(Clone)]
+struct AppState {
+    broadcaster: WebRtcBroadcaster,
+    meta_rx: watch::Receiver<PipelineResult>,
+}
 
 #[tokio::main]
 async fn main() {
-    let width = 640;
-    let height = 480;
-
-    let font_data = std::fs::read("font.ttf").expect("Failed to read font.ttf");
-    let font = Font::try_from_vec(font_data).unwrap();
+    let width = 640.0;
+    let height = 480.0;
 
     let (frame_tx, mut frame_rx) = watch::channel::<Option<SharedFrame>>(None);
+    let (drawn_frame_tx, mut drawn_frame_rx) = watch::channel::<Option<SharedFrame>>(None);
+    let (meta_tx, meta_rx) = watch::channel(PipelineResult::default());
 
-    // 1. Spawn Hardware Capture Thread
+    // ---------------------------------------------------------
+    // 1. HARDWARE CAPTURE THREAD
+    // ---------------------------------------------------------
     thread::spawn(move || {
-        let mut cam = CameraNokhwa::new(0, width, height).expect("Failed to init camera hardware");
+        let mut cam = CameraNokhwa::new(0, width as u32, height as u32).expect("Failed to init camera hardware");
         println!("Camera started successfully at {}x{}", width, height);
 
         loop {
@@ -47,50 +54,104 @@ async fn main() {
         }
     });
 
-    let mut apriltag_detector = AprilTagDetector::new();
-    let mut ai_detector = ObjectDetectorOnnx::new("yolo11n.onnx").expect("Failed to init object detector");
+    // ---------------------------------------------------------
+    // 2. PARALLEL PROCESSING & DRAWING THREAD
+    // ---------------------------------------------------------
+    let drawn_tx_clone = drawn_frame_tx.clone();
+    let rt = tokio::runtime::Handle::current();
 
-    let (annotated_tx, mut annotated_rx) = watch::channel(None);
+    // Run this in a standard OS thread since CV operations are CPU-blocking
+    thread::spawn(move || {
+        let mut tag_detector = AprilTagDetector::new();
+        let mut obj_detector = ObjectDetectorOnnx::new("yolo11n.onnx").expect("Failed to init object detector");
 
-    // 2. MAIN VISION ORCHESTRATION LOOP
-    tokio::spawn(async move {
-        let mut last_print = Instant::now();
-        let mut frames_this_second = 0;
+        let cyan = Rgb([0, 242, 255]);
+        let neon_green = Rgb([57, 255, 20]);
+        
+        // Load font for drawing text (Ensure this file exists or change the path to a valid .ttf on your system)
+        let font_data: &[u8] = include_bytes!("../font.ttf");
+        let font = Font::try_from_bytes(font_data).expect("Error constructing Font");
+        let font_scale = Scale { x: 16.0, y: 16.0 };
 
         loop {
-            if frame_rx.changed().await.is_ok() {
-                if let Some(frame) = frame_rx.borrow().clone() {
-                    let mut data = frame.data.to_vec();
-                    frames_this_second += 1;
+            // Wait for a fresh frame from the camera using Tokio's block_on
+            if rt.block_on(frame_rx.changed()).is_err() { break; }
+            
+            if let Some(frame) = frame_rx.borrow().clone() {
+                
+                // --- PARALLEL EXECUTION ---
+                // rayon::join splits this workload across two threads and waits for both to finish
+                let (tags, objects) = rayon::join(
+                    || tag_detector.detect(&frame),
+                    || obj_detector.detect(&frame)
+                );
 
-                    if last_print.elapsed().as_secs() >= 1 {
-                        println!("Vision Pipeline | {} FPS", frames_this_second);
-                        frames_this_second = 0;
-                        last_print = Instant::now();
+                // Send JSON metadata to WebSocket (optional, just in case you need it for UI data)
+                let _ = meta_tx.send(PipelineResult {
+                    frame_timestamp: frame.timestamp_ms,
+                    tags: tags.iter().map(|f| { ApriltagDetection { id: f.id, corners: f.corners } }).collect(),
+                    latency_ms: 0.0,
+                    objects: objects.clone(),
+                });
+
+                // --- SYNCHRONOUS DRAWING ---
+                let mut annotated_frame = frame.clone();
+                
+                let raw_bytes: Vec<u8> = (*annotated_frame.data).clone();
+                
+                // 2. Wrap our mutable Vec<u8> into an ImageBuffer
+                if let Some(mut img_buf) = image::ImageBuffer::<Rgb<u8>, _>::from_raw(
+                    width as u32, 
+                    height as u32, 
+                    raw_bytes
+                ) {
+                    // Draw Objects (YOLO)
+                    for obj in &objects {
+                        let [x1, y1, x2, y2] = obj.box_2d;
+                        let rect = Rect::at(x1 as i32, y1 as i32).of_size((x2 - x1) as u32, (y2 - y1) as u32);
+                        
+                        draw_hollow_rect_mut(&mut img_buf, rect, cyan);
+                        
+                        let label = format!("{} {:.0}%", obj.label, obj.confidence * 100.0);
+                        draw_text_mut(&mut img_buf, cyan, x1 as i32, (y1 - 20.0) as i32, font_scale, &font, &label);
                     }
 
-                    // [Vision logic goes here]
+                    // Draw AprilTags
+                    for tag in &tags {
+                        let c = tag.corners;
+                        for i in 0..4 {
+                            let start = c[i];
+                            let end = c[(i + 1) % 4];
+                            
+                            draw_line_segment_mut(
+                                &mut img_buf, 
+                                (start.0 as f32, start.1 as f32), 
+                                (end.0 as f32, end.1 as f32), 
+                                neon_green
+                            );
+                        }
+                        let id_label = format!("ID: {}", tag.id);
+                        draw_text_mut(&mut img_buf, neon_green, c[0].0 as i32, (c[0].1 - 20.0) as i32, font_scale, &font, &id_label);
+                    }
 
-                    let annotated = SharedFrame {
-                        width: frame.width,
-                        height: frame.height,
-                        timestamp_ms: frame.timestamp_ms,
-                        data: std::sync::Arc::new(data),
-                    };
-
-                    let _ = annotated_tx.send(Some(annotated));
+                    // Extract the modified raw bytes back into your struct 
+                    annotated_frame.data = std::sync::Arc::new(img_buf.into_raw());
+                } else {
+                    eprintln!("Warning: Could not construct ImageBuffer. The width/height do not match the byte length of annotated_frame.data.");
                 }
-            } else {
-                break; 
-            }
+
+                // Send the finished, drawn frame to the H.264 encoder
+                let _ = drawn_tx_clone.send(Some(annotated_frame));            }
         }
     });
 
-    // 3. --- START VIDEO ENCODER THREAD ---
-    let (h264_tx, h264_rx) = watch::channel(Vec::new());
-    let rt = tokio::runtime::Handle::current();
-    let mut encoder_rx = annotated_rx.clone();
-    let mut x264 = X264Encoder::new(width, height).expect("Failed to create x264 encoder");
+    // ---------------------------------------------------------
+    // 3. ENCODER THREAD
+    // ---------------------------------------------------------
+    let (h264_tx, h264_rx) = watch::channel(EncodedFrame::default());
+    let rt2 = tokio::runtime::Handle::current();
+    let mut encoder_rx = drawn_frame_rx.clone();
+    let mut x264 = X264Encoder::new(width as u32, height as u32).expect("Failed to create x264 encoder");
 
     thread::spawn(move || {
         let mut last_print = Instant::now();
@@ -98,17 +159,17 @@ async fn main() {
         let mut bytes_this_second = 0;
 
         loop {
-            if rt.block_on(encoder_rx.changed()).is_err() {
+            if rt2.block_on(encoder_rx.changed()).is_err() {
                 break; 
             }
 
             if let Some(frame) = encoder_rx.borrow().clone() {
                 match x264.encode(&frame) {
                     Ok(payload) => {
-                        if !payload.is_empty() {
+                        if !payload.data.is_empty() {
                             let _ = h264_tx.send(payload.clone());
                             
-                            bytes_this_second += payload.len();
+                            bytes_this_second += payload.data.len();
                             frames_this_second += 1;
 
                             if last_print.elapsed().as_secs() >= 1 {
@@ -126,35 +187,34 @@ async fn main() {
         }
     });
 
-    // 4. --- START WEBRTC BROADCASTER & HTTP SERVER ---
-    // Start the WebRTC engine, passing it the H.264 stream
+    // ---------------------------------------------------------
+    // 4. WEBRTC BROADCAST & API SERVER
+    // ---------------------------------------------------------
     let broadcaster = WebRtcBroadcaster::start(h264_rx);
 
-    let _ = tokio::spawn(async move {
-        // Allow the React dev server to hit this API
-        let cors = CorsLayer::new()
-            .allow_origin(Any)
-            .allow_methods(Any)
-            .allow_headers(Any);
+    let shared_state = AppState {
+        broadcaster,
+        meta_rx,
+    };
 
-        let app = Router::new()
-            .route("/webrtc/sdp", post(sdp_handler))
-            .layer(cors)
-            .with_state(broadcaster); // Share the broadcaster with Axum
+    let cors = CorsLayer::new()
+        .allow_origin(Any)
+        .allow_methods(Any)
+        .allow_headers(Any);
 
-        let listener = tokio::net::TcpListener::bind("0.0.0.0:8080").await.unwrap();
-        println!("Signaling Server listening on http://0.0.0.0:8080/webrtc/sdp");
-        axum::serve(listener, app).await.unwrap();
-    }).await;
+    let app = Router::new()
+        .route("/webrtc/sdp", post(sdp_handler))
+        .route("/ws", get(ws_handler))
+        .layer(cors)
+        .with_state(shared_state);
+
+    let listener = tokio::net::TcpListener::bind("0.0.0.0:8080").await.unwrap();
+    println!("Signaling Server listening on http://0.0.0.0:8080");
+    axum::serve(listener, app).await.unwrap();
 }
 
-// Axum Handler for the SDP Handshake
-async fn sdp_handler(
-    State(broadcaster): State<WebRtcBroadcaster>,
-    body: String,
-) -> String {
-    // We pass the offer to the WebRTC Engine, and return the answer back to the browser
-    match broadcaster.handle_sdp_offer(&body).await {
+async fn sdp_handler(State(state): State<AppState>, body: String) -> String {
+    match state.broadcaster.handle_sdp_offer(&body).await {
         Ok(answer) => answer,
         Err(e) => {
             eprintln!("Failed to handle SDP: {}", e);
@@ -163,8 +223,17 @@ async fn sdp_handler(
     }
 }
 
-// ---------------------------------------------------------
-// Drawing Helpers (Unchanged)
-// ---------------------------------------------------------
-fn draw_ai_detection(width: u32, height: u32, data: &mut [u8], obj: &ObjectDetection, font: &rusttype::Font<'_>) { /* ... */ }
-fn draw_tag_outline(width: u32, height: u32, data: &mut [u8], corners: &[(f64, f64); 4]) { /* ... */ }
+async fn ws_handler(ws: WebSocketUpgrade, State(state): State<AppState>) -> impl axum::response::IntoResponse {
+    ws.on_upgrade(|socket| handle_socket(socket, state.meta_rx))
+}
+
+async fn handle_socket(mut socket: WebSocket, mut meta_rx: watch::Receiver<PipelineResult>) {
+    while meta_rx.changed().await.is_ok() {
+        let result = meta_rx.borrow().clone();
+        if let Ok(json) = serde_json::to_string(&result) {
+            if socket.send(Message::Text(json)).await.is_err() {
+                break; 
+            }
+        }
+    }
+}

@@ -2758,8 +2758,11 @@ dependencies = [
  "ndarray",
  "nokhwa",
  "ort",
+ "rayon",
  "rust-embed",
  "rusttype",
+ "serde",
+ "serde_json",
  "tokio",
  "tower-http",
  "video_capture",
@@ -3786,7 +3789,9 @@ dependencies = [
  "serde",
  "serde_json",
  "tokio",
+ "vision_core",
  "webrtc",
+ "webrtc-ice",
 ]
 
 [[package]]
@@ -3802,7 +3807,7 @@ dependencies = [
 name = "vision_core"
 version = "0.1.0"
 dependencies = [
- "apriltag",
+ "serde",
 ]
 
 [[package]]

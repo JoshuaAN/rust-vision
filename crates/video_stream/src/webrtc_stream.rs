@@ -1,8 +1,10 @@
 use std::sync::Arc;
 use std::time::{Duration, SystemTime};
 use tokio::sync::{Mutex, watch};
+use vision_core::EncodedFrame;
 use webrtc::api::APIBuilder;
 use webrtc::api::media_engine::{MediaEngine, MIME_TYPE_H264};
+use webrtc::api::setting_engine::SettingEngine;
 use webrtc::peer_connection::configuration::RTCConfiguration;
 use webrtc::peer_connection::peer_connection_state::RTCPeerConnectionState;
 use webrtc::peer_connection::sdp::session_description::RTCSessionDescription;
@@ -11,6 +13,8 @@ use webrtc::track::track_local::track_local_static_sample::TrackLocalStaticSampl
 use webrtc::track::track_local::TrackLocal;
 use webrtc::media::Sample;
 use bytes::Bytes;
+use webrtc_ice::network_type::NetworkType;
+use webrtc_ice::udp_network::{EphemeralUDP};
 
 /// Manages active WebRTC connections and broadcasts the H.264 feed to them.
 #[derive(Clone)]
@@ -22,12 +26,24 @@ pub struct WebRtcBroadcaster {
 
 impl WebRtcBroadcaster {
     /// Initializes the WebRTC engine and starts the background broadcasting loop.
-    pub fn start(mut h264_rx: watch::Receiver<Vec<u8>>) -> Self {
+    pub fn start(mut h264_rx: watch::Receiver<EncodedFrame>) -> Self {
         // 1. Setup the WebRTC Media Engine to strictly handle H.264
         let mut m = MediaEngine::default();
         m.register_default_codecs().expect("Failed to register codecs");
 
-        let api = Arc::new(APIBuilder::new().with_media_engine(m).build());
+        let mut ephemeral_udp = EphemeralUDP::default();
+    
+        ephemeral_udp.set_ports(5801, 5810).expect("Failed to set FRC port range");
+
+        let mut setting_engine = SettingEngine::default();
+
+        // This CD post claims its necessary to use TCP instead of UDP
+        // https://www.chiefdelphi.com/t/paper-opensight-v1-0-0-and-h-264-whitepaper/380776
+        // on the FMS, but I don't currently have a way to test this.
+        setting_engine.set_network_types(vec![NetworkType::Tcp4]);
+        // setting_engine.set_udp_network(UDPNetwork::Ephemeral(ephemeral_udp));
+
+        let api = Arc::new(APIBuilder::new().with_media_engine(m).with_setting_engine(setting_engine).build());
         let active_tracks: Arc<Mutex<Vec<Arc<TrackLocalStaticSample>>>> = Arc::new(Mutex::new(Vec::new()));
 
         // 2. Spawn the Broadcasting Loop
@@ -42,7 +58,7 @@ impl WebRtcBroadcaster {
                 }
 
                 let frame_data = h264_rx.borrow().clone();
-                if frame_data.is_empty() {
+                if frame_data.data.is_empty() {
                     continue;
                 }
 
@@ -52,8 +68,9 @@ impl WebRtcBroadcaster {
                 last_timestamp = now;
 
                 let sample = Sample {
-                    data: Bytes::from(frame_data),
+                    data: Bytes::from(frame_data.data),
                     duration,
+                    timestamp: SystemTime::UNIX_EPOCH + Duration::from_millis(frame_data.timestamp_ms),
                     ..Default::default()
                 };
 
@@ -62,7 +79,6 @@ impl WebRtcBroadcaster {
                 let mut i = 0;
                 while i < tracks.len() {
                     if let Err(e) = tracks[i].write_sample(&sample).await {
-                        // If writing fails (e.g., client disconnected), remove the track
                         println!("Client disconnected, removing track. Error: {}", e);
                         tracks.remove(i);
                     } else {

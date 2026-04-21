@@ -7,3 +7,9 @@ pub struct SharedFrame {
     pub height: u32,
     pub data: Arc<Vec<u8>>,
 }
+
+#[derive(Clone, Default)]
+pub struct EncodedFrame {
+    pub data: Vec<u8>,
+    pub timestamp_ms: u64,
+}

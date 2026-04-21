@@ -1,6 +1,6 @@
 use std::error::Error;
 
-use vision_core::SharedFrame;
+use vision_core::{EncodedFrame, SharedFrame};
 use x264::{Colorspace, Image, Plane, Preset, Setup, Tune};
 
 use crate::encoder::VideoEncoder;
@@ -31,7 +31,7 @@ impl X264Encoder {
 }
 
 impl VideoEncoder for X264Encoder {
-    fn encode(&mut self, frame: &SharedFrame) -> Result<Vec<u8>, Box<dyn Error>> {
+    fn encode(&mut self, frame: &SharedFrame) -> Result<EncodedFrame, Box<dyn Error>> {
         let (y, u, v) = rgb_to_i420(self.width as usize, self.height as usize, &frame.data);
 
         let plane_y = Plane { stride: self.width as i32, data: &y };
@@ -49,7 +49,7 @@ impl VideoEncoder for X264Encoder {
         match self.encoder.encode(self.pts, x264_image) {
             Ok((data, _picture)) => {
                 self.pts += 1;
-                Ok(data.entirety().to_vec())
+                Ok(EncodedFrame { data: data.entirety().to_vec(), timestamp_ms: frame.timestamp_ms })
             }
             Err(_) => Err("Failed to encode frame".into()),
         }
